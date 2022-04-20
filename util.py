@@ -152,7 +152,22 @@ def split_sentences(sentences, length):
 
 
 def write_processed(sentences, fname):
+    """
+    Saves the preprocessed sentences in token format to csv file after
+    converting them to a data frame
 
+    Args:
+        sentences (list): A list of lists where the first dimension is a list of
+            sentences and the second is a list of tokens in string format.
+        fname (str): The system file path to save the processed tokens
+
+    Returns:
+        None
+
+    Raises:
+        None
+
+    """
     # Convert the list of sentences to a data frame
     df = pd.DataFrame(sentences)
 

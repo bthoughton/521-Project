@@ -1,2 +1,8 @@
 .idea/
 __pycache__/
+data/ohe_vectors/*
+data/predicted/*
+data/processed/*
+data/vectors/*
+tok_arr.npy
+

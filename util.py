@@ -265,11 +265,22 @@ def transform_sents(sents, tok_dict):
         # form a list to store the dict index version of the current sentence
         idx_sent = []
 
-        # for each token in the sentence
-        for tok in sent:
+        # Check if the sent is a token (response variables)
+        if isinstance(sent, str):
+
+            # If the sentence is
+            tok = sent
 
             # append the token's index to the list
             idx_sent.append(tok_dict[tok])
+
+        else:
+
+            # for each token in the sentence
+            for tok in sent:
+
+                # append the token's index to the list
+                idx_sent.append(tok_dict[tok])
 
         # append the dict index version of the sentence to the main list
         idx_sents.append(idx_sent)
@@ -278,13 +289,14 @@ def transform_sents(sents, tok_dict):
     return idx_sents
 
 
-def ohe(idx_toks, vocab_length):
+def ohe(idx_toks, vocab_length, vtype):
     """Forms a matrix of one-hot-encoded dictionary-index-mapped tokens
 
     Args:
         idx_toks (list[int, int, ...]): A dictionary-index-mapped
             representation of tokens
         vocab_length (int): The number of unique tokens in the token dictionary
+        vtype (str): The type of variable, "X" (predictor) or "Y" (response)
 
     Returns:
         X (numpy.ndarray): A matrix where every row represents a particular
@@ -294,17 +306,30 @@ def ohe(idx_toks, vocab_length):
         None
     """
 
-    # initialize a NumPy array to store the one-hot-encoded token(s)
-    X = np.zeros((len(idx_toks), vocab_length))
+    if vtype == 'X':
+        # initialize a NumPy array to store the one-hot-encoded token(s)
+        X = np.zeros((len(idx_toks), vocab_length))
+
+    elif vtype == 'Y':
+        # initialize a NumPy array to store the one-hot-encoded token(s)
+        Y = np.zeros(vocab_length)
 
     # for each dictionary-index-mapped token, and its index
     for i, idx_tok in enumerate(idx_toks):
 
-        # based on the index, flag the associated vocab feature
-        X[i, idx_tok] = 1.
+        if vtype == 'X':
+            # based on the index, flag the associated vocab feature
+            X[i, idx_tok] = 1.
 
-    # return the one-hot-encoded dictionary-index-mapped token matrix
-    return X
+            # return the one-hot-encoded dictionary-index-mapped token matrix
+            return X
+
+        elif vtype == 'Y':
+            # based on the index, flag the associated vocab feature
+            Y[idx_tok] = 1.
+
+            # return the one-hot-encoded dictionary-index-mapped token matrix
+            return Y
 
 
 # test the util functions

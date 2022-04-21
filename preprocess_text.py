@@ -31,6 +31,8 @@ def main(ptb_train_file, ptb_dev_file, ptb_test_file):
         None
     """
 
+    print('Loading dataset...')
+
     # load and tokenize the training sentences
     train_sents = load_sents(ptb_train_file)
     # load and tokenize the validation sentences
@@ -57,6 +59,8 @@ def main(ptb_train_file, ptb_dev_file, ptb_test_file):
         sg=1                            # uses skip-gram architecture
     )
 
+    print('Training the word2vec model on dataset...')
+
     # train the word2vec model
     w2v_mod.train(
         corpus_iterable=all_processed_sents,
@@ -82,6 +86,8 @@ def main(ptb_train_file, ptb_dev_file, ptb_test_file):
         'testY': test_sent_Y,
     }
 
+    print('Splitting data into predictors and response variables...')
+
     # Write the processed and split sentences to file
     for name, sent in sentences.items():
 
@@ -93,6 +99,8 @@ def main(ptb_train_file, ptb_dev_file, ptb_test_file):
 
     # Switch to the keyedVector instance
     word_vectors = w2v_mod.wv
+
+    print('Creating word2vec vectors for entire data set...')
 
     for name, sent in sentences.items():
 
@@ -110,8 +118,18 @@ def main(ptb_train_file, ptb_dev_file, ptb_test_file):
 
     # form the one-hot-encoded baseline vectors
 
+    print('Creating the token to word index dictionary...')
+
     # create a dictionary mapping each processed token to a unique index
     tok_dict = form_dictionary(all_processed_sents)
+
+    # Save the words of the token dictionary as an array
+    tok_arr = np.array([word for word in tok_dict.keys()])
+
+    # Save the array
+    np.save('data/tok_arr.npy', tok_arr)
+
+    print('Creating the OHE sentence vectors...')
 
     # for each filename-sentences key-value pair in the dictionary
     for name, sent in sentences.items():
@@ -126,7 +144,7 @@ def main(ptb_train_file, ptb_dev_file, ptb_test_file):
             X_2vec = transform_sents(sent, tok_dict)
 
             # form a matrix of one-hot-encoded dictionary-index-mapped tokens
-            X_ohe = np.array([ohe(sent, len(tok_dict)) for sent in X_2vec])
+            X_ohe = np.array([ohe(sent, len(tok_dict), vtype='X') for sent in X_2vec])
 
             # save the one-hot-encoded vectors to an output file
             np.save(fname, X_ohe)
@@ -134,11 +152,14 @@ def main(ptb_train_file, ptb_dev_file, ptb_test_file):
         # else, if the variable type is "response"
         else:
 
-            # indicate that the variable type is "response"
-            v_type = 'response'
+            # form a dictionary-index-mapped representation of the tokens
+            Y_2vec = transform_sents(sent, tok_dict)
 
-            # convert tokens to vectors and save to disk
-            word_2_vector(sent, word_vectors, fname, v_type)
+            # form a matrix of one-hot-encoded dictionary-index-mapped tokens
+            Y_ohe = np.array([ohe(sent, len(tok_dict), vtype='Y') for sent in Y_2vec])
+
+            # save the one-hot-encoded vectors to an output file
+            np.save(fname, Y_ohe)
 
 
 if __name__ == "__main__":

@@ -27,15 +27,21 @@ def main(
     words are represented as 100 dimensional word2vec vectors.
 
     Args:
-        vector_directory (str):
-        ohe_directory (str)
-        epochs (int):
-        units (int):
-        activation (str):
-        recurrent_activation (str):
-        dense_activation (str):
-        input_shape (tuple):
-        model_file (str):
+        vector_directory (str): The system file path to the word2vec vectors,
+            these are the predictor variables.
+        ohe_directory (str): The system file path to the target variables,
+            represented as OHE words, with dimensionality equal to vocab size.
+        epochs (int): The number of training epochs.
+        units (int): The number of units in first LSTM layer and half the amount
+            of units in the second LSTM layer.
+        activation (str): The LSTM layers' activation function.
+        recurrent_activation (str): The LSTM layers' recurrent activation
+            function.
+        dense_activation (str): The activation function of the first dense
+            layer, last layer must be softmax.
+        input_shape (tuple): The input shape of the predictor variables
+            (time-steps, features)
+        model_file (str): The system file path to save the trained model.
 
     Returns:
         None
@@ -95,8 +101,6 @@ def main(
     # Specify sequential model stack
     model = Sequential()
 
-    print(input_shape)
-
     # Add LSTM layer
     model.add(
         Bidirectional(
@@ -107,8 +111,8 @@ def main(
                 #kernel_regularizer=regularizers.l1_l2(0.001, 0.001),
                 #recurrent_regularizer=regularizers.l1_l2(0.001, 0.001),
                 #bias_regularizer=regularizers.l1_l2(0.001, 0.001),
-                #dropout=P['DO'],
-                #recurrent_dropout=P['RD'],
+                dropout=0.25,
+                recurrent_dropout=0.25,
                 return_sequences=True
             ),
             input_shape=input_shape
@@ -125,10 +129,9 @@ def main(
                 #kernel_regularizer=regularizers.l1_l2(0.001, 0.001),
                 #recurrent_regularizer=regularizers.l1_l2(0.001, 0.001),
                 #bias_regularizer=regularizers.l1_l2(0.001, 0.001),
-                #dropout=P['DO'],
-                #recurrent_dropout=P['RD'],
-                #return_sequences=True
-                #input_shape=input_shape
+                dropout=0.25,
+                recurrent_dropout=0.25,
+                return_sequences=False
             )
         )
     )
@@ -136,8 +139,8 @@ def main(
     # Add dense layer
     model.add(
         Dense(
-            units=100,
-            activation='relu'
+            units=128,
+            activation=dense_activation
             #kernel_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
             #bias_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
         )
@@ -146,8 +149,8 @@ def main(
     # Add the final dense layer (outputs probability for each word in vocab)
     model.add(
         Dense(
-            units=9999,
-            activation=dense_activation
+            units=vocab_size,
+            activation='softmax'
             #kernel_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
             #bias_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
         )
@@ -241,13 +244,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--epochs",
         type=int,
-        default=30,
+        default=100,
         help="The number of training epochs"
     )
     parser.add_argument(
         "--units",
         type=int,
-        default=32,
+        default=100,
         help="The number of LSTM units"
     )
     parser.add_argument(
@@ -265,8 +268,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dense_activation",
         type=str,
-        default='softmax',
-        help="The LSTM recurrent activation function"
+        default='relu',
+        help="The activation function of the first dense layer"
     )
     parser.add_argument(
         "--input_shape",

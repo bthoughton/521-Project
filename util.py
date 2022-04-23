@@ -172,7 +172,7 @@ def write_processed(sentences, fname):
     df = pd.DataFrame(sentences)
 
     # Write the data frame to file
-    df.to_csv(fname, header=False, index=False)
+    df.to_csv(fname, header=False, index=False, encoding='utf-8')
 
 
 def word_2_vector(sentences, keyed_vectors, file, v_type):

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from keras import regularizers
 from keras.models import Sequential
-from keras.layers import LSTM, Dense
+from keras.layers import LSTM, Bidirectional, Dense, Embedding, Dropout
 from keras.callbacks import ModelCheckpoint
 
 
@@ -39,6 +39,9 @@ def main(
 
         print('The vector shape is {}\n'.format(vectors[key].shape))
 
+    vocab_size = vectors[key].shape[-1]
+    print(vocab_size)
+
     # Check if gpu available
     if tf.config.experimental.list_physical_devices('GPU'):
         # Define message for logger
@@ -55,39 +58,41 @@ def main(
 
     # Add LSTM layer
     model.add(
-        LSTM(
-            units=units,
-            activation=activation,
-            recurrent_activation=recurrent_activation,
-            kernel_regularizer=regularizers.l1_l2(0.001, 0.001),
-            recurrent_regularizer=regularizers.l1_l2(0.001, 0.001),
-            bias_regularizer=regularizers.l1_l2(0.001, 0.001),
-            # dropout=P['DO'],
-            # recurrent_dropout=P['RD'],
-            return_sequences=True,
+        Bidirectional(
+            LSTM(
+                units=units,
+                activation=activation,
+                recurrent_activation=recurrent_activation,
+                kernel_regularizer=regularizers.l1_l2(0.00, 0.00),
+                recurrent_regularizer=regularizers.l1_l2(0.00, 0.00),
+                bias_regularizer=regularizers.l1_l2(0.00, 0.00),
+                dropout=0.25,
+                recurrent_dropout=0.25,
+                return_sequences=True
+            ),
             input_shape=input_shape
         )
     )
 
     # Add LSTM layer
     model.add(
-        LSTM(
-            units=units*2,
-            activation=activation,
-            recurrent_activation=recurrent_activation,
-            kernel_regularizer=regularizers.l1_l2(0.001, 0.001),
-            recurrent_regularizer=regularizers.l1_l2(0.001, 0.001),
-            bias_regularizer=regularizers.l1_l2(0.001, 0.001),
-            # dropout=P['DO'],
-            # recurrent_dropout=P['RD'],
-            # return_sequences=True
-            input_shape=input_shape
+        Bidirectional(
+            LSTM(
+                units=units*2,
+                activation=activation,
+                recurrent_activation=recurrent_activation,
+                kernel_regularizer=regularizers.l1_l2(0.00, 0.00),
+                recurrent_regularizer=regularizers.l1_l2(0.00, 0.00),
+                bias_regularizer=regularizers.l1_l2(0.00, 0.00),
+                dropout=0.25,
+                recurrent_dropout=0.25
+            )
         )
     )
     # Add dense layer
     model.add(
         Dense(
-            units=1000,
+            units=200,
             activation=dense_activation,
             # kernel_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
             # bias_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
@@ -97,8 +102,8 @@ def main(
     # Add dense layer
     model.add(
         Dense(
-            units=100,
-            activation=dense_activation,
+            units=vocab_size,
+            activation='softmax',
             # kernel_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
             # bias_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
         )
@@ -110,7 +115,7 @@ def main(
     # Compile the model
     model.compile(
         optimizer='rmsprop',
-        loss='mse',
+        loss='categorical_crossentropy',
         metrics=['acc']
     )
 
@@ -118,7 +123,7 @@ def main(
     model_checkpoint = ModelCheckpoint(
         filepath=model_file,
         save_weights_only=False,
-        monitor='val_loss',
+        monitor='val_acc',
         mode='auto',
         save_best_only=True
     )
@@ -136,42 +141,41 @@ def main(
     # Get the mse and acc for training and validation data
     loss = history.history['loss']
     val_loss = history.history['val_loss']
-    # acc = history.history['acc']
-    # val_acc = history.history['val_acc']
+    acc = history.history['acc']
+    val_acc = history.history['val_acc']
 
     # Define the epoch range
     epochs = range(1, len(loss) + 1)
 
     # Define a plot figure with 4 subplots
-    fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
+    fig, ax = plt.subplots(figsize=(8, 8), nrows=2, ncols=1, dpi=300)
 
     # Adjust the plot spacing
-    # plt.subplots_adjust(hspace=0.3, wspace=0.3)
+    plt.subplots_adjust(hspace=0.3, wspace=0.3)
 
     # Define the mse plot
-    plt.plot(epochs, loss, 'bo', label='Training Loss')
-    plt.plot(epochs, val_loss, 'b', label='Validation Loss')
-    plt.title('Training and Validation Loss')
-    plt.xlabel('Epoch Number')
-    plt.ylabel('Loss (Mean Squared Error)')
-    plt.legend()
+    ax[0].plot(epochs, loss, 'bo', label='Training Loss')
+    ax[0].plot(epochs, val_loss, 'b', label='Validation Loss')
+    ax[0].set_title('Training and Validation Loss')
+    ax[0].set_xlabel('Epoch Number')
+    ax[0].set_ylabel('Loss (Categorical Cross-Entropy)')
+    ax[0].legend()
 
     # Define the accuracy plot
-    # ax[1].plot(epochs, acc, 'bo', label='Training ACC')
-    # ax[1].plot(epochs, val_acc, 'b', label='Validation ACC')
-    # ax[1].set_title('Training and Validation ACC')
-    # ax[1].set_xlabel('Epoch Number')
-    # ax[1].set_ylabel('Accuracy')
-    # ax[1].legend()
+    ax[1].plot(epochs, acc, 'bo', label='Training ACC')
+    ax[1].plot(epochs, val_acc, 'b', label='Validation ACC')
+    ax[1].set_title('Training and Validation ACC')
+    ax[1].set_xlabel('Epoch Number')
+    ax[1].set_ylabel('Accuracy')
+    ax[1].legend()
 
     # Save and show the plot
     plt.savefig('plots/loss3.png')
-    plt.show()
+    #plt.show()
 
+    # make model predictions and save
     testYp = model.predict(vectors['testX'])
-    trainYp = model.predict(vectors['trainX'])
     np.save('data/ohe_vectors/testYp.npy', testYp)
-    np.save('data/ohe_vectors/trainYp.npy', trainYp)
 
 
 if __name__ == "__main__":
@@ -187,13 +191,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--epochs",
         type=int,
-        default=30,
+        default=20,
         help="The number of training epochs"
     )
     parser.add_argument(
         "--units",
         type=int,
-        default=32,
+        default=100,
         help="The number of LSTM units"
     )
     parser.add_argument(
@@ -205,7 +209,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--recurrent_activation",
         type=str,
-        default='tanh',
+        default='sigmoid',
         help="The LSTM recurrent activation function"
     )
     parser.add_argument(

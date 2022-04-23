@@ -83,7 +83,10 @@ def main(w2v_model_file, ohe_vectors, predicted_vectors, token_arr):
                 if word in sim_words:
                     success += 1
 
-            print('The number of times the predicted word was in the top 10 most similar words was {}'.format(success))
+            print(
+                'The number of times the predicted word was in the top 10 most similar words was {} ({:.3f}%)\n'
+                .format(success, 100*success/records)
+            )
 
 
 if __name__ == "__main__":

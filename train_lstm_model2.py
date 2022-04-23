@@ -10,7 +10,7 @@ from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras import regularizers
 from keras.models import Sequential
-from keras.layers import LSTM, Dense, Embedding, Dropout, Conv1D, MaxPooling1D, GlobalMaxPooling1D
+from keras.layers import LSTM, Bidirectional, Dense, Embedding, Dropout
 from keras.callbacks import ModelCheckpoint
 
 
@@ -39,6 +39,7 @@ def read_data(data_dic):
         print(msg)
 
     return data
+
 
 def word_to_sent(sent):
 
@@ -79,7 +80,8 @@ def tokens_to_seq(data):
 
 
 def main(
-        vector_directory,
+        ohe_directory,
+        seq_directory,
         epochs,
         units,
         activation,
@@ -88,39 +90,62 @@ def main(
         input_shape,
         model_file
 ):
-    # Instantiate empty dic to store data
-    data = {
+
+    # Instantiate empty dic to store sequence data
+    seq = {
         'trainX': [],
-        'trainY': [],
         'devX': [],
-        'devY': [],
-        'testX': [],
-        'testY': [],
+        'testX': []
     }
 
-    # Read in the processed text data
-    data = read_data(data)
+    # Iterate over the files in the sequence directory (predictor variables)
+    for f in Path(seq_directory).iterdir():
+
+        # Check if the file is a predictor variable
+        if 'X' in f.name:
+
+            print(f)
+
+            # Define the data's key
+            key = f.name.replace('.csv', '')
+
+            # Read in the processed text data
+            seq[key] = pd.read_csv(f, header=None, index_col=False, encoding='utf-8').to_numpy()
+
+            # Get the data's shape
+            shape = seq[key].shape
+
+            print('Read file {} with shape {}'.format(f, shape))
 
     # Convert the sentences to sequence of word indices
-    seq = tokens_to_seq(data)
+    seq = tokens_to_seq(seq)
 
     # Instantiate Path object for word vector directory
-    v_dir = Path(__file__).parent.joinpath(vector_directory)
+    ohe_dir = Path(__file__).parent.joinpath(ohe_directory)
 
-    # Instantiate dictionary to store the word vector arrays
-    vectors = {}
+    # Instantiate dictionary to store the target OHE vectors
+    ohe = {}
 
-    for file in v_dir.iterdir():
+    for f in ohe_dir.iterdir():
 
-        print('Loading {}'.format(file.name))
+        if 'Y' in f.name:
+            print('Loading {}'.format(f.name))
 
-        # Define the key for the array
-        key = file.name.replace('.npy', '')
+            # Define the key for the array
+            key = f.name.replace('.npy', '')
 
-        # Load the word vector array and place into dictionary
-        vectors[key] = np.load(str(file))
+            # Load the word vector array and place into dictionary
+            ohe[key] = np.load(str(f))
 
-        print('The vector shape is {}\n'.format(vectors[key].shape))
+            # Define the data's shape
+            shape = ohe[key].shape
+
+            print('Read file {} with shape {}'.format(f, shape))
+
+    # Define the data set vocabulary size
+    vocab_size = shape[1]
+
+    print('The vocabulary size is {}'.format(vocab_size))
 
     # Check if gpu available
     if tf.config.list_physical_devices('GPU'):
@@ -140,42 +165,46 @@ def main(
     model.add(
         Embedding(
             input_dim=10000,
-            output_dim=32)
+            output_dim=100)
     )
 
     # Add LSTM layer
     model.add(
-        LSTM(
-            units=units,
-            activation=activation,
-            recurrent_activation=recurrent_activation,
-            kernel_regularizer=regularizers.l1_l2(0.001, 0.001),
-            recurrent_regularizer=regularizers.l1_l2(0.001, 0.001),
-            bias_regularizer=regularizers.l1_l2(0.001, 0.001),
-            #dropout=P['DO'],
-            #recurrent_dropout=P['RD'],
-            return_sequences=True
+        Bidirectional(
+            LSTM(
+                units=units,
+                activation=activation,
+                recurrent_activation=recurrent_activation,
+                kernel_regularizer=regularizers.l1_l2(0.00, 0.00),
+                recurrent_regularizer=regularizers.l1_l2(0.00, 0.00),
+                bias_regularizer=regularizers.l1_l2(0.00, 0.00),
+                dropout=0.25,
+                recurrent_dropout=0.25,
+                return_sequences=True
+            )
         )
     )
 
     # Add LSTM layer
     model.add(
-        LSTM(
-            units=units*2,
-            activation=activation,
-            recurrent_activation=recurrent_activation,
-            kernel_regularizer=regularizers.l1_l2(0.001, 0.001),
-            recurrent_regularizer=regularizers.l1_l2(0.001, 0.001),
-            bias_regularizer=regularizers.l1_l2(0.001, 0.001),
-            #dropout=P['DO'],
-            #recurrent_dropout=P['RD'],
-            # return_sequences=True
+        Bidirectional(
+            LSTM(
+                units=units*2,
+                activation=activation,
+                recurrent_activation=recurrent_activation,
+                kernel_regularizer=regularizers.l1_l2(0.00, 0.00),
+                recurrent_regularizer=regularizers.l1_l2(0.00, 0.00),
+                bias_regularizer=regularizers.l1_l2(0.00, 0.00),
+                dropout=0.25,
+                recurrent_dropout=0.25,
+                return_sequences=False
+            )
         )
     )
     # Add dense layer
     model.add(
         Dense(
-            units=1000,
+            units=200,
             activation=dense_activation,
             #kernel_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
             #bias_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
@@ -185,8 +214,8 @@ def main(
     # Add dense layer
     model.add(
         Dense(
-            units=100,
-            activation=dense_activation,
+            units=vocab_size,
+            activation='softmax',
             #kernel_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
             #bias_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
         )
@@ -198,7 +227,7 @@ def main(
     # Compile the model
     model.compile(
         optimizer='rmsprop',
-        loss='mse',
+        loss='categorical_crossentropy',
         metrics=['acc']
     )
 
@@ -206,7 +235,7 @@ def main(
     model_checkpoint = ModelCheckpoint(
         filepath=model_file,
         save_weights_only=False,
-        monitor='val_loss',
+        monitor='val_acc',
         mode='auto',
         save_best_only=True
     )
@@ -214,9 +243,9 @@ def main(
     # Train the model
     history = model.fit(
         x=seq['trainX'],
-        y=vectors['trainY'],
+        y=ohe['trainY'],
         epochs=epochs,
-        validation_data=(seq['devX'], vectors['devY']),
+        validation_data=(seq['devX'], ohe['devY']),
         batch_size=128,
         callbacks=[model_checkpoint]
     )
@@ -231,55 +260,59 @@ def main(
     epochs = range(1, len(loss) + 1)
 
     # Define a plot figure with 4 subplots
-    fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
+    fig, ax = plt.subplots(figsize=(8, 8), nrows=2, ncols=1, dpi=300)
 
     # Adjust the plot spacing
-    #plt.subplots_adjust(hspace=0.3, wspace=0.3)
+    plt.subplots_adjust(hspace=0.3, wspace=0.3)
 
     # Define the mae plot
-    ax.plot(epochs, loss, 'bo', label='Training Loss')
-    ax.plot(epochs, val_loss, 'b', label='Validation Loss')
-    ax.set_title('Training and Validation Loss')
-    ax.set_xlabel('Epoch Number')
-    ax.set_ylabel('Loss (Mean Squared Error)')
-    ax.legend()
+    ax[0].plot(epochs, loss, 'bo', label='Training Loss')
+    ax[0].plot(epochs, val_loss, 'b', label='Validation Loss')
+    ax[0].set_title('Training and Validation Loss')
+    ax[0].set_xlabel('Epoch Number')
+    ax[0].set_ylabel('Loss (Categorical Cross-Entropy)')
+    ax[0].legend()
 
     # Define the loss plot
-    # ax[1].plot(epochs, acc, 'bo', label='Training ACC')
-    # ax[1].plot(epochs, val_acc, 'b', label='Validation ACC')
-    # ax[1].set_title('Training and Validation ACC')
-    # ax[1].set_xlabel('Epoch Number')
-    # ax[1].set_ylabel('Accuracy')
-    # ax[1].legend()
+    ax[1].plot(epochs, acc, 'bo', label='Training ACC')
+    ax[1].plot(epochs, val_acc, 'b', label='Validation ACC')
+    ax[1].set_title('Training and Validation ACC')
+    ax[1].set_xlabel('Epoch Number')
+    ax[1].set_ylabel('Accuracy')
+    ax[1].legend()
 
     plt.savefig('plots/loss2.png')
     #plt.show()
 
-    testYp = model.predict(seq['testX'])
-    trainYp = model.predict(seq['trainX'])
-    np.save('data/vectors/testYp2.npy', testYp)
-    np.save('data/vectors/trainYp2.npy', trainYp)
+    test_yp = model.predict(seq['testX'])
+    np.save('data/predicted/model2.npy', test_yp)
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--vector_directory",
+        "--ohe_directory",
         type=str,
-        default="data/vectors",
-        help="word vector directory relative file path"
+        default="data/ohe_vectors",
+        help="OHE word vector directory system file path"
+    )
+    parser.add_argument(
+        "--seq_directory",
+        type=str,
+        default="data/processed",
+        help="Pre-processed sequence directory system file path"
     )
     parser.add_argument(
         "--epochs",
         type=int,
-        default=30,
+        default=100,
         help="The number of training epochs"
     )
     parser.add_argument(
         "--units",
         type=int,
-        default=32,
+        default=100,
         help="The number of LSTM units"
     )
     parser.add_argument(
@@ -291,14 +324,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--recurrent_activation",
         type=str,
-        default='tanh',
+        default='sigmoid',
         help="The LSTM recurrent activation function"
     )
     parser.add_argument(
         "--dense_activation",
         type=str,
         default='relu',
-        help="The LSTM recurrent activation function"
+        help="The first dense layer activation function"
     )
     parser.add_argument(
         "--input_shape",
@@ -315,7 +348,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(
-        args.vector_directory,
+        args.ohe_directory,
+        args.seq_directory,
         args.epochs,
         args.units,
         args.activation,

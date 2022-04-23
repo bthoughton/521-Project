@@ -1,5 +1,6 @@
 # imports
 import argparse
+from pathlib import Path
 import numpy as np
 from gensim.models.word2vec import Word2Vec
 from util import (
@@ -30,6 +31,35 @@ def main(ptb_train_file, ptb_dev_file, ptb_test_file):
     Raises:
         None
     """
+    print('Creating required directories...\n')
+
+    # Define the repo path
+    repo_path = Path(__file__).parent
+
+    # Define the required directories for repo to function
+    req_dir = [
+        'data/ohe_vectors',
+        'data/predicted',
+        'data/processed',
+        'data/vectors',
+        'models',
+        'plots'
+    ]
+
+    # Convert the required list into Path objects
+    req_dir_paths = [repo_path.joinpath(path) for path in req_dir]
+
+    # Iterate over the required directories
+    for req_dir in req_dir_paths:
+
+        # Check if it already exists
+        if req_dir.is_dir():
+            print('{} already exists\n'.format(req_dir))
+
+        # If it does not exist create it
+        else:
+            print('Creating {}'.format(req_dir))
+            req_dir.mkdir()
 
     print('Loading dataset...')
 

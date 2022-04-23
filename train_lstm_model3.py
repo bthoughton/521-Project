@@ -175,7 +175,7 @@ def main(
 
     # make model predictions and save
     testYp = model.predict(vectors['testX'])
-    np.save('data/ohe_vectors/testYp.npy', testYp)
+    np.save('data/predicted/model3.npy.npy', testYp)
 
 
 if __name__ == "__main__":

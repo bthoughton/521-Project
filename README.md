@@ -10,7 +10,7 @@ directories. Note that only data files on GitHub are the original dataset files
 files are generated upon running the various python scripts in this repo.
 
 📦`521-Project/`<br>
- ┣ 📂`data/`<br>
+ ┣ 📂`data/`- Contains original (raw), intermediate and prediction data<br>
  ┃ ┣ 📂`ohe_vectors/` - OHE data set generated upon running `preprocess_text.py`<br>
  ┃ ┃ ┣ 📜`devX.npy` - One Hot Encoded predictor variables (development set)<br>
  ┃ ┃ ┣ 📜`devY.npy` - One Hot Encoded response variables (development set)<br>
@@ -31,12 +31,12 @@ files are generated upon running the various python scripts in this repo.
  ┃ ┃ ┗ 📜`trainY.csv` - Pre-processed response tokens (train set)<br>
  ┃ ┣ 📂`raw/` - The original un-processed data set<br>
  ┃ ┃ ┗ 📂`ptbdataset/` - The original un-processed Penn Treebank corpus<br>
- ┃ ┃ ┃ ┣ 📜`ptb.char.test.txt`<br>
- ┃ ┃ ┃ ┣ 📜`ptb.char.train.txt`<br>
- ┃ ┃ ┃ ┣ 📜`ptb.char.valid.txt`<br>
- ┃ ┃ ┃ ┣ 📜`ptb.test.txt`<br>
- ┃ ┃ ┃ ┣ 📜`ptb.train.txt`<br>
- ┃ ┃ ┃ ┣ 📜`ptb.valid.txt`<br>
+ ┃ ┃ ┃ ┣ 📜`ptb.char.test.txt` - Character level test set (not used for project)<br>
+ ┃ ┃ ┃ ┣ 📜`ptb.char.train.txt` - Character level train set (not used for project)<br>
+ ┃ ┃ ┃ ┣ 📜`ptb.char.valid.txt` - Character level dev set (not used for project)<br>
+ ┃ ┃ ┃ ┣ 📜`ptb.test.txt` - Word level raw test set<br>
+ ┃ ┃ ┃ ┣ 📜`ptb.train.txt` - Word level raw train set<br>
+ ┃ ┃ ┃ ┣ 📜`ptb.valid.txt` - Word level raw dev set<br>
  ┃ ┃ ┃ ┗ 📜`README` - Corpus information<br>
  ┃ ┣ 📂`vectors/` - Word2Vec representation of the Penn Treebank dataset<br>
  ┃ ┃ ┣ 📜`devX.npy` - Word2Vec predictor variables (development set)<br>
@@ -52,6 +52,7 @@ files are generated upon running the various python scripts in this repo.
  ┃ ┣ 📜`LSTM3.h5` - LSTM model with no embedding space<br>
  ┃ ┗ 📜`word2vec.model` - Trained Word2Vec model trained on corpus<br>
  ┣ 📂`plots/` - Model training results plots<br>
+ ┃ ┣ 📜`acc_results.png` - Summary accuracy plot of all 3 models<br>
  ┃ ┣ 📜`loss1.png` - LSTM model 1 training results<br>
  ┃ ┣ 📜`loss2.png` - LSTM model 2 training results<br>
  ┃ ┗ 📜`loss3.png` - LSTM model 3 training results<br>
@@ -62,7 +63,7 @@ files are generated upon running the various python scripts in this repo.
  ┣ 📜`train_lstm_model1.py` - Source script for LSTM model 1<br>
  ┣ 📜`train_lstm_model2.py` - Source script for LSTM model 2<br>
  ┣ 📜`train_lstm_model3.py` - Source script for LSTM model 3<br>
- ┗ 📜`util.py` - Various helper functions to process data set in `preprocess_text.py`<br>
+ ┗ 📜`util.py` - Various helper functions to process datasets in `preprocess_text.py`<br>
 
 
 ## Data
@@ -108,7 +109,7 @@ subdirectory of the repository.
 Clone the repo and navigate to the `521-Project` directory. If using Anaconda or 
 Miniconda create a new environment with `python` version 3.9.7.
 
-`conda create --name nextwordpred python=3.9.7`
+`conda create --name nextwordpred python=3.9.12`
 
 Activate the environment
 
@@ -117,6 +118,18 @@ Activate the environment
 Install the requirements after navigating to the `521-Project` directory
 
 `home/521-Project$ pip install -r requirements.txt`
+
+**-OR** if using conda we recommend that tensorflow is installed before the rest of
+the required packages.
+
+`conda install tensorflow`
+
+`conda install keras gensim matplotlib pandas`
+
+**Note:** if having trouble installing `matplotlib` attempt to install from the 
+`conda-forge` channel
+
+`conda install -c conda-forge matplotlib`
 
 ## Usage Examples
 
@@ -147,7 +160,6 @@ Note that `preprocess_text.py` should be run before training or evaluating LSTM 
 &emsp;&emsp;`--activation tanh /`<br>
 &emsp;&emsp;`--recurrent_activation sigmoid /`<br>
 &emsp;&emsp;`--dense_activation relu /`<br>
-&emsp;&emsp;`--input_shape (5, 100) /`<br>
 &emsp;&emsp;`--model_file models/LSTM2.h5`<br>
 
 `python train_lstm_model3.py /`<br>

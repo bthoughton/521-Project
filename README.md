@@ -115,16 +115,13 @@ Activate the environment
 
 `conda activate nextwordpred`
 
-Install the requirements after navigating to the `521-Project` directory
-
-`home/521-Project$ pip install -r requirements.txt`
-
-**-OR** if using conda we recommend that tensorflow is installed before the rest of
-the required packages.
-
-`conda install tensorflow`
+`tensorflow` can be a little tricky to get up and running sometimes. It is 
+recommended that all other modules first be installed with `conda` then install
+`tensorflow` with `pip`
 
 `conda install keras gensim matplotlib pandas`
+
+`pip install tensorflow`
 
 **Note:** if having trouble installing `matplotlib` attempt to install from the 
 `conda-forge` channel

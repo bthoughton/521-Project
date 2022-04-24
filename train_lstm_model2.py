@@ -1,21 +1,34 @@
-import os
-import logging
 import argparse
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import tensorflow as tf
 from pathlib import Path
-import matplotlib.pyplot as plt
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras import regularizers
 from keras.models import Sequential
-from keras.layers import LSTM, Bidirectional, Dense, Embedding, Dropout
+from keras.layers import LSTM, Bidirectional, Dense, Embedding
 from keras.callbacks import ModelCheckpoint
 
 
 # Define function to read in data
 def read_data(data_dic):
+    """
+    Reads the pre-processed sequence data
+    Args:
+        data_dic (dict): Dictionary with keys representing system file paths
+            to the pre-processed sequence data.
+
+    Returns:
+        data (dict): The dictionary containing the sequence data where the key
+            is the dataset and the value is the pre-processed numpy array
+            sequence data. Each row is a sentence and each column is a token.
+
+    Raises:
+        None
+
+    """
 
     data = data_dic
 
@@ -42,6 +55,19 @@ def read_data(data_dic):
 
 
 def word_to_sent(sent):
+    """
+    Convert list of tokens to a single string.
+
+    Args:
+        sent (iterable): The sentence (sequence of tokens) to be converted to a
+            string.
+
+    Returns:
+        s (str): The single string representation of the sentence.
+
+    Raises:
+        None
+    """
 
     s = ''
     for tok in sent:
@@ -51,6 +77,22 @@ def word_to_sent(sent):
 
 
 def tokens_to_seq(data):
+    """
+    Uses the keras Tokenizer to convert sequences of tokens into sequential
+    data ready to be input into model for training.
+
+    Args:
+        data (dict): The data where the keys are the datasets and the values are
+            the pre-processed sentences in token format.
+
+    Returns:
+        seq (dict): The data where the keys are the datasets and the values are
+            the sequence format (arrays of word indices).
+
+    Raises:
+        None
+
+    """
 
     # Iterate over all 6 data sets
     for name, arr in data.items():
@@ -87,9 +129,36 @@ def main(
         activation,
         recurrent_activation,
         dense_activation,
-        input_shape,
         model_file
 ):
+    """
+    Trains a bidirectional LSTM model using previous words as predictor
+    variables and the next word as the response variable. The input is
+    represented as sequential word indices and the and the output is the
+    probability for each word being the next word in the sentence. This model
+    trains its own 100 dimensional embedding space.
+
+    Args:
+        ohe_directory (str): The system file path to the target variables,
+            represented as OHE words, with dimensionality equal to vocab size.
+        seq_directory (str): The system file path to the predictor variables,
+            represented as pre-processed list of tokens.
+        epochs (int): The number of training epochs.
+        units (int): The number of units in first LSTM layer and half the amount
+            of units in the second LSTM layer.
+        activation (str): The LSTM layers' activation function.
+        recurrent_activation (str): The LSTM layers' recurrent activation
+            function.
+        dense_activation (str): The activation function of the first dense
+            layer, last layer must be softmax.
+        model_file (str): The system file path to save the trained model.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
 
     # Instantiate empty dic to store sequence data
     seq = {
@@ -147,12 +216,9 @@ def main(
 
     print('The vocabulary size is {}'.format(vocab_size))
 
-    # Check if gpu available
+    # Check if gpu is being used for training
     if tf.config.list_physical_devices('GPU'):
-        # Define message for logger
-        msg = '##### Using GPU for training #####'
-        # Log message
-        #logger.info(msg)
+        msg = '#################### Using GPU for training ####################'
         print(msg)
 
     ###########################################################################
@@ -178,8 +244,8 @@ def main(
                 kernel_regularizer=regularizers.l1_l2(0.00, 0.00),
                 recurrent_regularizer=regularizers.l1_l2(0.00, 0.00),
                 bias_regularizer=regularizers.l1_l2(0.00, 0.00),
-                dropout=0.25,
-                recurrent_dropout=0.25,
+                #dropout=0.25,
+                #recurrent_dropout=0.25,
                 return_sequences=True
             )
         )
@@ -195,8 +261,8 @@ def main(
                 kernel_regularizer=regularizers.l1_l2(0.00, 0.00),
                 recurrent_regularizer=regularizers.l1_l2(0.00, 0.00),
                 bias_regularizer=regularizers.l1_l2(0.00, 0.00),
-                dropout=0.25,
-                recurrent_dropout=0.25,
+                #dropout=0.25,
+                #recurrent_dropout=0.25,
                 return_sequences=False
             )
         )
@@ -206,8 +272,8 @@ def main(
         Dense(
             units=200,
             activation=dense_activation,
-            #kernel_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
-            #bias_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
+            kernel_regularizer=regularizers.l1_l2(0.00, 0.00),
+            bias_regularizer=regularizers.l1_l2(0.00, 0.00)
         )
     )
 
@@ -216,8 +282,8 @@ def main(
         Dense(
             units=vocab_size,
             activation='softmax',
-            #kernel_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
-            #bias_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
+            kernel_regularizer=regularizers.l1_l2(0.00, 0.00),
+            bias_regularizer=regularizers.l1_l2(0.00, 0.00)
         )
     )
 
@@ -281,11 +347,12 @@ def main(
     ax[1].set_ylabel('Accuracy')
     ax[1].legend()
 
+    # Save the plot
     plt.savefig('plots/loss2.png')
-    #plt.show()
 
     test_yp = model.predict(seq['testX'])
     np.save('data/predicted/model2.npy', test_yp)
+
 
 if __name__ == "__main__":
 
@@ -306,7 +373,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--epochs",
         type=int,
-        default=100,
+        default=20,
         help="The number of training epochs"
     )
     parser.add_argument(
@@ -334,12 +401,6 @@ if __name__ == "__main__":
         help="The first dense layer activation function"
     )
     parser.add_argument(
-        "--input_shape",
-        type=tuple,
-        default=(5, 100),
-        help="The input shape, (time-steps, features)"
-    )
-    parser.add_argument(
         "--model_file",
         type=str,
         default='models/LSTM2.h5',
@@ -355,6 +416,5 @@ if __name__ == "__main__":
         args.activation,
         args.recurrent_activation,
         args.dense_activation,
-        args.input_shape,
         args.model_file
     )

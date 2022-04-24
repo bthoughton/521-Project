@@ -1,4 +1,3 @@
-# imports
 import argparse
 from pathlib import Path
 import numpy as np
@@ -6,7 +5,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from keras import regularizers
 from keras.models import Sequential
-from keras.layers import LSTM, Bidirectional, Dense, Embedding, Dropout
+from keras.layers import LSTM, Bidirectional, Dense
 from keras.callbacks import ModelCheckpoint
 
 
@@ -20,6 +19,32 @@ def main(
         input_shape,
         model_file
 ):
+    """
+    Trains a bidirectional LSTM model using previous words as predictor
+    variables and the next word as the response variable. The input words are
+    represented as OHE vectors and the output is the probability for each
+    word being the next word in the sentence.
+
+    Args:
+        vector_directory (str): The system file path to the OHE vectors.
+        epochs (int): The number of training epochs.
+        units (int): The number of units in first LSTM layer and half the amount
+            of units in the second LSTM layer.
+        activation (str): The LSTM layers' activation function.
+        recurrent_activation (str): The LSTM layers' recurrent activation
+            function.
+        dense_activation (str): The activation function of the first dense
+            layer, last layer must be softmax.
+        input_shape (tuple): The input shape of the predictor variables
+            (time-steps, features)
+        model_file (str): The system file path to save the trained model.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
 
     # Instantiate Path object for word vector directory
     v_dir = Path(__file__).parent.joinpath(vector_directory)
@@ -46,8 +71,6 @@ def main(
     if tf.config.experimental.list_physical_devices('GPU'):
         # Define message for logger
         msg = '##### Using GPU for training #####'
-        # Log message
-        # logger.info(msg)
         print(msg)
 
     # Define the input shape
@@ -171,7 +194,6 @@ def main(
 
     # Save and show the plot
     plt.savefig('plots/loss3.png')
-    #plt.show()
 
     # make model predictions and save
     testYp = model.predict(vectors['testX'])

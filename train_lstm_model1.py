@@ -1,12 +1,11 @@
-# imports
 import argparse
-from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
+from pathlib import Path
 from keras import regularizers
 from keras.models import Sequential
-from keras.layers import LSTM, Bidirectional, Dense, Embedding, Dropout
+from keras.layers import LSTM, Bidirectional, Dense
 from keras.callbacks import ModelCheckpoint
 
 
@@ -23,8 +22,9 @@ def main(
 ):
     """
     Trains a bidirectional LSTM model using previous words as predictor
-    variables and the next word as the response variable. Both input and output
-    words are represented as 100 dimensional word2vec vectors.
+    variables and the next word as the response variable. The input is 100
+    dimensional word2vec vectors and the output is the probability for each
+    word being the next word in the sentence.
 
     Args:
         vector_directory (str): The system file path to the word2vec vectors,
@@ -48,7 +48,6 @@ def main(
 
     Raises:
         None
-
     """
 
     # Instantiate Path object for word vector directory
@@ -94,8 +93,6 @@ def main(
     if tf.config.list_physical_devices('GPU'):
         # Define message for logger
         msg = '##### Using GPU for training #####'
-        # Log/print message
-        #logger.info(msg)
         print(msg)
 
     # Specify sequential model stack
@@ -108,9 +105,9 @@ def main(
                 units=units,
                 activation=activation,
                 recurrent_activation=recurrent_activation,
-                #kernel_regularizer=regularizers.l1_l2(0.001, 0.001),
-                #recurrent_regularizer=regularizers.l1_l2(0.001, 0.001),
-                #bias_regularizer=regularizers.l1_l2(0.001, 0.001),
+                kernel_regularizer=regularizers.l1_l2(0.00, 0.00),
+                recurrent_regularizer=regularizers.l1_l2(0.00, 0.00),
+                bias_regularizer=regularizers.l1_l2(0.00, 0.00),
                 dropout=0.25,
                 recurrent_dropout=0.25,
                 return_sequences=True
@@ -126,9 +123,9 @@ def main(
                 units=units*2,
                 activation=activation,
                 recurrent_activation=recurrent_activation,
-                #kernel_regularizer=regularizers.l1_l2(0.001, 0.001),
-                #recurrent_regularizer=regularizers.l1_l2(0.001, 0.001),
-                #bias_regularizer=regularizers.l1_l2(0.001, 0.001),
+                kernel_regularizer=regularizers.l1_l2(0.00, 0.00),
+                recurrent_regularizer=regularizers.l1_l2(0.00, 0.00),
+                bias_regularizer=regularizers.l1_l2(0.00, 0.00),
                 dropout=0.25,
                 recurrent_dropout=0.25,
                 return_sequences=False
@@ -140,9 +137,9 @@ def main(
     model.add(
         Dense(
             units=128,
-            activation=dense_activation
-            #kernel_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
-            #bias_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
+            activation=dense_activation,
+            kernel_regularizer=regularizers.l1_l2(0.00, 0.00),
+            bias_regularizer=regularizers.l1_l2(0.00, 0.00),
         )
     )
 
@@ -150,9 +147,9 @@ def main(
     model.add(
         Dense(
             units=vocab_size,
-            activation='softmax'
-            #kernel_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
-            #bias_regularizer=regularizers.l1_l2(P['L1'], P['L2']),
+            activation='softmax',
+            kernel_regularizer=regularizers.l1_l2(0.00, 0.00),
+            bias_regularizer=regularizers.l1_l2(0.00, 0.00),
         )
     )
 
@@ -218,7 +215,6 @@ def main(
 
     # Save and show the plot
     plt.savefig('plots/loss1.png')
-    #plt.show()
 
     # Predict the test data and write to file
     testYp = model.predict(vectors['testX'])

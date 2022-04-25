@@ -184,6 +184,9 @@ def main(w2v_model_file, ohe_vectors, predicted_vectors, token_arr):
     ax.bar(x_axis - 0.2, correct_scores, width=0.4, label='Correct Word')
     ax.bar(x_axis + 0.2, top_ten_scores, width=0.4, label='Word in Top 10')
 
+    ax.set_title('Accuracy Results')
+    ax.set_ylabel('Number of Correct Words')
+
     # Define the x-axis tick marks as model names
     ax.set_xticks(x_axis, labels)
 

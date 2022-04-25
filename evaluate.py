@@ -18,8 +18,8 @@ def make_prediction(sentence, model, word2vec, token_array, input_type):
         model (keras.engine.sequential.Sequential): The loaded keras model.
         word2vec (gensim.models.keyedvectors.KeyedVectors): The word2vec model
             which should be used to convert tokens to vectors.
-        token_array (list): The list of vocabulary tokens, must be in same
-            order as was used to pre-process the original data.
+        token_array (dict): The list of vocabulary tokens, mapping to their
+            word indices.
         input_type (str): Which model input to use, either "word2vec" or "ohe".
 
     Returns:
@@ -144,6 +144,7 @@ def main(w2v_model_file, ohe_vectors, predicted_vectors, token_arr):
             records = act_idx.shape[0]
             correct = np.where(act_idx == pre_idx, 1, 0).sum()
             acc = correct/records
+            print('Found a total of {} records'.format(records))
             print('The test accuracy of model {} is {:.3f}%'.format(name[-1], acc*100))
 
             # Begin a predicted in top ten counter
@@ -199,9 +200,9 @@ def main(w2v_model_file, ohe_vectors, predicted_vectors, token_arr):
     # Load model 1 & 3
     model1 = load_model('models/LSTM1.h5')
     model3 = load_model('models/LSTM3.h5')
-    print(type(model1))
+
     # Define made up tokens to predict next word
-    tokens = ['i', 'really', 'love', 'a', 'baseball']
+    tokens = ['what', 'time', 'are', 'you', 'going']
 
     # Get the next word prediction of model 1
     next_word1 = make_prediction(

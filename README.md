@@ -819,9 +819,9 @@ project was run in.
 ## Environment Setup
 
 Clone the repo and navigate to the `521-Project` directory. If using Anaconda or 
-Miniconda create a new environment with `python` version 3.9.7.
+Miniconda create a new environment.
 
-`conda create --name nextwordpred python=3.9.12`
+`conda create --name nextwordpred`
 
 Activate the environment
 

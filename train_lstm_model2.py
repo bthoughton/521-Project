@@ -244,8 +244,8 @@ def main(
                 kernel_regularizer=regularizers.l1_l2(0.00, 0.00),
                 recurrent_regularizer=regularizers.l1_l2(0.00, 0.00),
                 bias_regularizer=regularizers.l1_l2(0.00, 0.00),
-                #dropout=0.25,
-                #recurrent_dropout=0.25,
+                dropout=0.25,
+                recurrent_dropout=0.25,
                 return_sequences=True
             )
         )
@@ -261,8 +261,8 @@ def main(
                 kernel_regularizer=regularizers.l1_l2(0.00, 0.00),
                 recurrent_regularizer=regularizers.l1_l2(0.00, 0.00),
                 bias_regularizer=regularizers.l1_l2(0.00, 0.00),
-                #dropout=0.25,
-                #recurrent_dropout=0.25,
+                dropout=0.25,
+                recurrent_dropout=0.25,
                 return_sequences=False
             )
         )
@@ -373,7 +373,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--epochs",
         type=int,
-        default=20,
+        default=30,
         help="The number of training epochs"
     )
     parser.add_argument(
